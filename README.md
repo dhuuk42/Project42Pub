@@ -260,7 +260,8 @@ Keep this URL secret — it grants write access to your health data.
    - **Floors Sensor** — optional
    - **Active Calories Sensor** — optional (Apple Watch only)
    - **Heart Rate Sensor** — optional (Apple Watch only)
-   - **Sync times** — default is noon + 22:00; adjust as you like
+   - **Sync interval** — how often to push within the active window (min 15 min, default 30 min)
+   - **Active window start / end** — syncing only fires within this range (default 08:00–22:00)
 4. Save
 
 Each person creates **their own automation** from the same blueprint with their own webhook URL and sensors.

@@ -30,7 +30,7 @@ blueprint:
     name (e.g. `iphone_16pro_mirco`).
 
   domain: automation
-  source_url: https://github.com/dhuuk42/Project42_2026/blob/main/homeassistant/project42_blueprint.yaml
+  source_url: https://github.com/dhuuk42/Project42Pub/blob/main/project42_blueprint.yaml
 
   input:
     webhook_url:

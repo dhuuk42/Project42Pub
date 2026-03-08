@@ -260,7 +260,8 @@ Halte diese URL geheim — sie erlaubt Schreibzugriff auf deine Gesundheitsdaten
    - **Stockwerk-Sensor** — optional
    - **Aktive Kalorien** — optional (nur Apple Watch)
    - **Herzfrequenz-Sensor** — optional (nur Apple Watch)
-   - **Synchronisierungszeiten** — Standard: 12:00 + 22:00 Uhr; nach Belieben anpassen
+   - **Synchronisierungsintervall** — wie oft innerhalb des aktiven Zeitfensters synchronisiert wird (min. 15 Min., Standard 30 Min.)
+   - **Aktives Zeitfenster Start / Ende** — Synchronisierung läuft nur in diesem Zeitraum (Standard: 08:00–22:00 Uhr)
 4. Speichern
 
 Jede Person erstellt **ihre eigene Automation** aus demselben Blueprint mit ihrer eigenen Webhook-URL und ihren eigenen Sensoren.

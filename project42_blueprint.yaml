@@ -2,7 +2,8 @@ blueprint:
   name: "Project42 Daily Sync"
   description: >
     Syncs your daily health data (steps, distance, calories, heart rate) to
-    Project42 automatically — twice a day at times you choose.
+    Project42 automatically at a configurable interval within a time window
+    you choose (default: every 30 minutes between 08:00 and 22:00).
 
 
     **Before importing this blueprint**, add the following to your
@@ -19,7 +20,12 @@ blueprint:
 
     ```
 
-    Then reload HA and come back to set up this automation.
+    Already have a `rest_command:` section? Add only the `http_post:` entry
+    inside your existing block — do not create a second `rest_command:` key.
+
+
+    Then reload HA (Developer Tools → Quick Reload → REST Command) and come
+    back to set up this automation.
 
 
     **Get your personal webhook URL** from Project42 → Profile → Home Assistant
@@ -95,16 +101,35 @@ blueprint:
         entity:
           domain: sensor
 
-    morning_sync_time:
-      name: Morning sync time
-      description: First daily sync — captures midday progress.
-      default: "12:00:00"
+    sync_interval:
+      name: Sync interval
+      description: >
+        How often to push data within the active time window.
+        Minimum is every 15 minutes — syncing more often won't produce fresher
+        data as health sensors don't update that quickly.
+      default: "/30"
+      selector:
+        select:
+          options:
+            - label: "Every 15 minutes"
+              value: "/15"
+            - label: "Every 20 minutes"
+              value: "/20"
+            - label: "Every 30 minutes (recommended)"
+              value: "/30"
+            - label: "Every hour"
+              value: "0"
+
+    window_start:
+      name: Active window — start
+      description: Syncing begins at this time each day.
+      default: "08:00:00"
       selector:
         time:
 
-    evening_sync_time:
-      name: Evening sync time
-      description: Second daily sync — captures end-of-day totals.
+    window_end:
+      name: Active window — end
+      description: Syncing stops at this time each day.
       default: "22:00:00"
       selector:
         time:
@@ -117,10 +142,13 @@ variables:
   hr_id: !input heart_rate_sensor
 
 trigger:
-  - platform: time
-    at: !input morning_sync_time
-  - platform: time
-    at: !input evening_sync_time
+  - platform: time_pattern
+    minutes: !input sync_interval
+
+condition:
+  - condition: time
+    after: !input window_start
+    before: !input window_end
 
 action:
   - service: rest_command.http_post

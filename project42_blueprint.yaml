@@ -1,0 +1,137 @@
+blueprint:
+  name: "Project42 Daily Sync"
+  description: >
+    Syncs your daily health data (steps, distance, calories, heart rate) to
+    Project42 automatically — twice a day at times you choose.
+
+
+    **Before importing this blueprint**, add the following to your
+    `configuration.yaml` (only needed once, even for multiple users):
+
+    ```yaml
+
+    rest_command:
+      http_post:
+        url: "{{ url }}"
+        method: POST
+        content_type: "application/json"
+        payload: "{{ payload }}"
+
+    ```
+
+    Then reload HA and come back to set up this automation.
+
+
+    **Get your personal webhook URL** from Project42 → Profile → Home Assistant
+    → Generate Webhook Token.
+
+
+    **Find your sensor IDs** in Developer Tools → States, filter by your device
+    name (e.g. `iphone_16pro_mirco`).
+
+  domain: automation
+  source_url: https://github.com/dhuuk42/Project42_2026/blob/main/homeassistant/project42_blueprint.yaml
+
+  input:
+    webhook_url:
+      name: Project42 Webhook URL
+      description: >
+        Your personal URL from Project42 → Profile → Home Assistant.
+        Looks like: https://huukdev.de/api/webhooks/ha/abc123...
+      selector:
+        text:
+          type: url
+
+    steps_sensor:
+      name: Steps Sensor
+      description: >
+        Daily step count. Find it in Developer Tools → States, filter by your
+        device name and look for "steps".
+        Example: sensor.iphone_16pro_mirco_steps
+      selector:
+        entity:
+          domain: sensor
+
+    distance_sensor:
+      name: Distance Sensor (optional)
+      description: >
+        Walking + running distance reported in meters by the iOS companion app.
+        Example: sensor.iphone_16pro_mirco_distance
+        Leave empty if not available.
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+
+    floors_sensor:
+      name: Floors Climbed Sensor (optional)
+      description: >
+        Floors ascended. Example: sensor.iphone_16pro_mirco_floors_ascended
+        Leave empty if not available.
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+
+    calories_sensor:
+      name: Active Calories Sensor (optional, Apple Watch only)
+      description: >
+        Active energy burned. Only available with Apple Watch.
+        Example: sensor.iphone_mirco_active_energy
+        Leave empty if you don't have an Apple Watch.
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+
+    heart_rate_sensor:
+      name: Heart Rate Sensor (optional, Apple Watch only)
+      description: >
+        Resting or average heart rate. Only available with Apple Watch.
+        Example: sensor.iphone_mirco_heart_rate
+        Leave empty if you don't have an Apple Watch.
+      default: ""
+      selector:
+        entity:
+          domain: sensor
+
+    morning_sync_time:
+      name: Morning sync time
+      description: First daily sync — captures midday progress.
+      default: "12:00:00"
+      selector:
+        time:
+
+    evening_sync_time:
+      name: Evening sync time
+      description: Second daily sync — captures end-of-day totals.
+      default: "22:00:00"
+      selector:
+        time:
+
+variables:
+  steps_id: !input steps_sensor
+  distance_id: !input distance_sensor
+  floors_id: !input floors_sensor
+  calories_id: !input calories_sensor
+  hr_id: !input heart_rate_sensor
+
+trigger:
+  - platform: time
+    at: !input morning_sync_time
+  - platform: time
+    at: !input evening_sync_time
+
+action:
+  - service: rest_command.http_post
+    data:
+      url: !input webhook_url
+      payload: >
+        {
+          "steps": {{ states(steps_id) | int(0) }},
+          "distance_m": {{ states(distance_id) | float(0) | round(0) if distance_id != "" else "null" }},
+          "floors": {{ states(floors_id) | int(0) if floors_id != "" else "null" }},
+          "active_calories": {{ states(calories_id) | float(0) | round(1) if calories_id != "" else "null" }},
+          "heart_rate": {{ states(hr_id) | int(0) if hr_id != "" else "null" }},
+          "date": "{{ now().strftime('%Y-%m-%d') }}"
+        }
